@@ -2,7 +2,7 @@
 'use client'
 import React from 'react'
 import NewChat from './NewChat'
-import { useSession } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import { useCollection } from 'react-firebase-hooks/firestore'
 import { collection, orderBy, query } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -36,6 +36,7 @@ function Sidebar() {
             {chats?.docs.map((item) => (
               <ChatRow key={item.id} id={item.id} />
             ))}
+           
           </div>
         </div>
       </div>
@@ -45,6 +46,7 @@ function Sidebar() {
           src={session.user?.image!}
           alt=""
           className="h-12 w-12 rounded-full cursor-pointer mx-auto mb-2 hover:opacity-50"
+          onClick={() => signOut()}
         />
       )}
     </div>

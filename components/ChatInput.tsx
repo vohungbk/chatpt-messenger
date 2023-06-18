@@ -4,7 +4,7 @@ import { db } from '@/firebase'
 import { PaperAirplaneIcon } from '@heroicons/react/24/solid'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { useSession } from 'next-auth/react'
-import React, { FormEvent, useState } from 'react'
+import React, { FormEvent, KeyboardEvent, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import ModelSelection from './ModelSelection'
 import useSWR from 'swr'
@@ -15,6 +15,7 @@ type Props = {
 
 function ChatInput({ chatId }: Props) {
   const [prompt, setPrompt] = useState('')
+  const [previousPrompt, setPreviousPrompt] = useState('')
   const { data: session } = useSession()
   const { data: model } = useSWR('model', {
     fallbackData: 'text-davinci-003',
@@ -23,6 +24,7 @@ function ChatInput({ chatId }: Props) {
   const sendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!prompt) return
+    setPreviousPrompt(prompt)
 
     const input = prompt.trim()
     setPrompt('')
@@ -71,6 +73,15 @@ function ChatInput({ chatId }: Props) {
       .catch((err) => console.log(err))
   }
 
+  const handleArrowPress = (e: KeyboardEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (e.code === 'ArrowUp') {
+      setPrompt(previousPrompt)
+    }
+  }
+
   return (
     <div className="bg-gray-700/50 text-gray-400 rounded-lg text-sm">
       <form className="p-5 space-x-2 flex" onSubmit={sendMessage}>
@@ -81,6 +92,7 @@ function ChatInput({ chatId }: Props) {
           placeholder="Type your message here ..."
           disabled={!session}
           className="focus:outline-none bg-transparent flex-1 disabled:cursor-not-allowed disabled:text-gray-300"
+          onKeyUp={handleArrowPress}
         />
         <button
           disabled={!prompt || !session}
