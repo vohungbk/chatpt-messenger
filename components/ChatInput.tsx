@@ -6,6 +6,8 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { useSession } from 'next-auth/react'
 import React, { FormEvent, useState } from 'react'
 import { toast } from 'react-hot-toast'
+import ModelSelection from './ModelSelection'
+import useSWR from 'swr'
 
 type Props = {
   chatId: string
@@ -14,7 +16,9 @@ type Props = {
 function ChatInput({ chatId }: Props) {
   const [prompt, setPrompt] = useState('')
   const { data: session } = useSession()
-  const model = ''
+  const { data: model } = useSWR('model', {
+    fallbackData: 'text-davinci-003',
+  })
 
   const sendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -25,7 +29,7 @@ function ChatInput({ chatId }: Props) {
 
     const message: Message = {
       text: input,
-      createdAT: serverTimestamp(),
+      createdAt: serverTimestamp(),
       user: {
         _id: session?.user?.email!,
         name: session?.user?.name!,
@@ -34,6 +38,7 @@ function ChatInput({ chatId }: Props) {
           `https://ui-avatars.com/api/?name=${session?.user?.name}`,
       },
     }
+
     await addDoc(
       collection(
         db,
@@ -51,7 +56,7 @@ function ChatInput({ chatId }: Props) {
     await fetch('/api/askQuestion', {
       method: 'POST',
       headers: {
-        'Content-type': 'application/json',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         prompt: input,
@@ -60,6 +65,10 @@ function ChatInput({ chatId }: Props) {
         session,
       }),
     })
+      .then(() => {
+        toast.success('ChatGPT has response!', { id: notification })
+      })
+      .catch((err) => console.log(err))
   }
 
   return (
@@ -81,6 +90,9 @@ function ChatInput({ chatId }: Props) {
           <PaperAirplaneIcon className="h-4 w-4 -rotate-45" />
         </button>
       </form>
+      <div className="md:hidden">
+        <ModelSelection />
+      </div>
     </div>
   )
 }
